@@ -16,34 +16,26 @@ export default function Register() {
       setError("Student ID must be in the format 001/26.");
       return;
     }
-    if (!/^\d{4}[a-z]{3}\d{2}[a-z]+@buie\.ac\.in$/i.test(data.college_email)) {
-      setError(
-        "Use your college email format, for example 2026ece01name@buie.ac.in.",
-      );
-      return;
-    }
-    if (!card || card.size === 0) {
-      setError("Upload a clear image or PDF of your library card.");
-      return;
-    }
-    if (card.size > 5 * 1024 * 1024) {
+    if (card && card.size > 5 * 1024 * 1024) {
       setError("Library card upload must be 5 MB or smaller.");
       return;
     }
-    let cardData: string;
-    try {
-      cardData = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () =>
-          reject(new Error("Unable to read library card."));
-        reader.readAsDataURL(card);
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to read library card.");
-      return;
+    if (card && card.size > 0) {
+      try {
+        data.library_card = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () =>
+            reject(new Error("Unable to read library card."));
+          reader.readAsDataURL(card);
+        });
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "Unable to read library card.",
+        );
+        return;
+      }
     }
-    data.library_card = cardData;
     data.email = data.college_email;
     setBusy(true);
     try {
@@ -65,34 +57,40 @@ export default function Register() {
           Submit your student details and library card for librarian approval.
         </p>
         <label>
-          Name
+          Name{" "}
+          <span className="required" aria-hidden="true">
+            *
+          </span>
           <input name="name" required />
         </label>
         <label>
-          Student ID
+          Student ID{" "}
+          <span className="required" aria-hidden="true">
+            *
+          </span>
           <input name="student_id" placeholder="001/26" required />
         </label>
         <label>
-          College email
+          College email{" "}
+          <span className="required" aria-hidden="true">
+            *
+          </span>
           <input
             name="college_email"
-            type="email"
-            placeholder="2026ece01name@buie.ac.in"
-            pattern="^\\d{4}[a-zA-Z]{3}\\d{2}[a-zA-Z]+@buie\\.ac\\.in$"
+            type="text"
+            placeholder="your college email"
             required
           />
         </label>
         <label>
-          Library card (image or PDF, max 5 MB)
-          <input
-            name="library_card"
-            type="file"
-            accept="image/*,.pdf"
-            required
-          />
+          Library card (optional image or PDF, max 5 MB)
+          <input name="library_card" type="file" accept="image/*,.pdf" />
         </label>
         <label>
-          Password
+          Password{" "}
+          <span className="required" aria-hidden="true">
+            *
+          </span>
           <input name="password" type="password" minLength={8} required />
         </label>
         {error && <p className="error">{error}</p>}

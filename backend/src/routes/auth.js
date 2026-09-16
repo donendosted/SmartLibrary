@@ -8,8 +8,10 @@ import { validateStudentId } from "../middleware/auth.js";
 import multer from "multer";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5_000_000 } });
-const collegeEmail = /^20\d{2}[a-z]{3}\d{2}[a-z]+@buie\.ac\.in$/i;
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5_000_000 },
+});
 const publicUser = (user) => ({
   id: user._id.toString(),
   student_id: user.student_id,
@@ -28,62 +30,73 @@ const token = (user) =>
     { expiresIn: config.jwtExpiresIn },
   );
 
-router.post("/register", upload.single("library_card"), validateStudentId, async (req, res) => {
-  const { student_id, name, email, password, phone } = req.body;
-  if (!name || !email || !password)
-    throw apiError(
-      400,
-      "name, email and password are required",
-      "VALIDATION_ERROR",
-    );
-  if (!collegeEmail.test(email))
-    throw apiError(400, "Use your college email (for example 2026ece01name@buie.ac.in)", "INVALID_COLLEGE_EMAIL");
-  const uploadedCard = req.file
-    ? {
-        filename: req.file.originalname,
-        content_type: req.file.mimetype,
-        size: req.file.size,
-        content: req.file.buffer.toString("base64"),
-      }
-    : typeof req.body.library_card === "string" && req.body.library_card.startsWith("data:")
-      ? (() => {
-          const match = req.body.library_card.match(/^data:([^;]+);base64,(.+)$/);
-          if (!match) return null;
-          const buffer = Buffer.from(match[2], "base64");
-          return { filename: "library-card-upload", content_type: match[1], size: buffer.length, content: buffer.toString("base64") };
-        })()
-      : null;
-  if (!uploadedCard)
-    throw apiError(400, "A library card image or PDF is required", "LIBRARY_CARD_REQUIRED");
-  if (uploadedCard.size > 5_000_000)
-    throw apiError(400, "Library card must be 5 MB or smaller", "LIBRARY_CARD_TOO_LARGE");
-  const user = {
-    student_id,
-    name,
-    email: email.toLowerCase(),
-    phone: phone || null,
-    password_hash: await bcrypt.hash(password, 12),
-    role: "student",
-    status: "active",
-    created_at: new Date(),
-    library_card: {
-      ...uploadedCard,
-      uploaded_at: new Date(),
-    },
-  };
-  try {
-    user._id = (await db().collection("users").insertOne(user)).insertedId;
-  } catch (error) {
-    if (error.code === 11000)
+router.post(
+  "/register",
+  upload.single("library_card"),
+  validateStudentId,
+  async (req, res) => {
+    const { student_id, name, email, password, phone } = req.body;
+    if (!name || !email || !password)
       throw apiError(
-        409,
-        "Student ID or email already exists",
-        "DUPLICATE_USER",
+        400,
+        "name, email and password are required",
+        "VALIDATION_ERROR",
       );
-    throw error;
-  }
-  res.status(201).json({ user: publicUser(user), token: token(user) });
-});
+    const uploadedCard = req.file
+      ? {
+          filename: req.file.originalname,
+          content_type: req.file.mimetype,
+          size: req.file.size,
+          content: req.file.buffer.toString("base64"),
+        }
+      : typeof req.body.library_card === "string" &&
+          req.body.library_card.startsWith("data:")
+        ? (() => {
+            const match = req.body.library_card.match(
+              /^data:([^;]+);base64,(.+)$/,
+            );
+            if (!match) return null;
+            const buffer = Buffer.from(match[2], "base64");
+            return {
+              filename: "library-card-upload",
+              content_type: match[1],
+              size: buffer.length,
+              content: buffer.toString("base64"),
+            };
+          })()
+        : null;
+    if (uploadedCard && uploadedCard.size > 5_000_000)
+      throw apiError(
+        400,
+        "Library card must be 5 MB or smaller",
+        "LIBRARY_CARD_TOO_LARGE",
+      );
+    const user = {
+      student_id,
+      name,
+      email: email.toLowerCase(),
+      phone: phone || null,
+      password_hash: await bcrypt.hash(password, 12),
+      role: "student",
+      status: "active",
+      created_at: new Date(),
+    };
+    if (uploadedCard)
+      user.library_card = { ...uploadedCard, uploaded_at: new Date() };
+    try {
+      user._id = (await db().collection("users").insertOne(user)).insertedId;
+    } catch (error) {
+      if (error.code === 11000)
+        throw apiError(
+          409,
+          "Student ID or email already exists",
+          "DUPLICATE_USER",
+        );
+      throw error;
+    }
+    res.status(201).json({ user: publicUser(user), token: token(user) });
+  },
+);
 router.post("/login", async (req, res) => {
   const user = await db()
     .collection("users")

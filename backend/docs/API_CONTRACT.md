@@ -2,27 +2,27 @@
 
 Base URL is `NEXT_PUBLIC_API_URL`. Send JSON and use `Authorization: Bearer <token>` for protected routes. JWT payload contains `user_id`, optional `student_id`, and `role`; `role === "student"` is student access, every other role is librarian access.
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| POST | `/auth/register` | public | JSON or multipart: `student_id,name,email,password,phone?`, plus required `library_card` image/PDF. College email must match `2026ece01name@buie.ac.in` format. |
-| POST | `/auth/login` | public | `{student_id,password}` → `{user,token}` |
-| POST | `/auth/librarian/login` | public | `{username,password}` → `{user,token}` |
-| GET | `/api/books/search?q=&page=&limit=` | public | Paginated title/author search |
-| GET | `/api/books/:id` | public | Book plus copy availability |
-| GET | `/api/student/books` | student | Current loans |
-| GET | `/api/student/profile` | student | Profile |
-| POST | `/api/student/hold` | student | `{book_id}` |
-| GET | `/api/student/holds` | student | Current holds / queue position |
-| POST | `/api/student/contact` | student | `{subject?,message}`; stores the enquiry and sends mail when `SMTP_URL` is configured |
-| GET | `/api/notifications` | any user | Notifications |
-| POST | `/api/scan` | device integration | `{action:"checkout"|"return",barcode,student_id?}` |
-| GET | `/api/admin/inventory` | librarian | Paginated inventory |
-| GET | `/api/admin/users` | librarian | Paginated students |
-| GET | `/api/admin/users/:id` | librarian | Student and history |
-| GET | `/api/admin/transactions` | librarian | Paginated transactions |
-| GET | `/api/admin/reports/overdue` | librarian | Overdue report |
-| POST | `/api/admin/book` | librarian | `{isbn,title,author,category?,description?,quantity?}` |
-| PUT | `/api/admin/book/:id` | librarian | Editable metadata |
-| POST | `/api/admin/book/import` | librarian | multipart field `file`; CSV headers `ISBN,Title,Author,Quantity` |
+| Method | Path                                | Auth               | Purpose                                                                                                                                                         |
+| ------ | ----------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/auth/register`                    | public             | JSON or multipart: required `student_id,name,email,password`, optional `phone` and `library_card` image/PDF. Email format is not restricted. |
+| POST   | `/auth/login`                       | public             | `{student_id,password}` → `{user,token}`                                                                                                                        |
+| POST   | `/auth/librarian/login`             | public             | `{username,password}` → `{user,token}`                                                                                                                          |
+| GET    | `/api/books/search?q=&page=&limit=` | public             | Paginated title/author search                                                                                                                                   |
+| GET    | `/api/books/:id`                    | public             | Book plus copy availability                                                                                                                                     |
+| GET    | `/api/student/books`                | student            | Current loans                                                                                                                                                   |
+| GET    | `/api/student/profile`              | student            | Profile                                                                                                                                                         |
+| POST   | `/api/student/hold`                 | student            | `{book_id}`                                                                                                                                                     |
+| GET    | `/api/student/holds`                | student            | Current holds / queue position                                                                                                                                  |
+| POST   | `/api/student/contact`              | student            | `{subject?,message}`; stores the enquiry and sends mail when `SMTP_URL` is configured                                                                           |
+| GET    | `/api/notifications`                | any user           | Notifications                                                                                                                                                   |
+| POST   | `/api/scan`                         | device integration | `{action:"checkout"                                                                                                                                             | "return",barcode,student_id?}` |
+| GET    | `/api/admin/inventory`              | librarian          | Paginated inventory                                                                                                                                             |
+| GET    | `/api/admin/users`                  | librarian          | Paginated students                                                                                                                                              |
+| GET    | `/api/admin/users/:id`              | librarian          | Student and history                                                                                                                                             |
+| GET    | `/api/admin/transactions`           | librarian          | Paginated transactions                                                                                                                                          |
+| GET    | `/api/admin/reports/overdue`        | librarian          | Overdue report                                                                                                                                                  |
+| POST   | `/api/admin/book`                   | librarian          | `{isbn,title,author,category?,description?,quantity?}`                                                                                                          |
+| PUT    | `/api/admin/book/:id`               | librarian          | Editable metadata                                                                                                                                               |
+| POST   | `/api/admin/book/import`            | librarian          | multipart field `file`; CSV headers `ISBN,Title,Author,Quantity`                                                                                                |
 
 `student_id` is strictly `XXX/YY`, for example `001/26`. Books and copies live in the database named by `MONGODB_BOOKS_DB`; users, loans, holds, fines, notifications, and contact requests live in `MONGODB_STUDENTS_DB`. API errors use an appropriate HTTP status and `{error,code}` (e.g. `400 INVALID_STUDENT_ID`, `401 AUTH_REQUIRED`, `403 FORBIDDEN`, `409 COPY_UNAVAILABLE`).

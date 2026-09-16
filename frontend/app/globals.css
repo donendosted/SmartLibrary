@@ -240,6 +240,10 @@ p {
   font-size: 0.9rem;
   font-weight: 700;
 }
+.required {
+  color: var(--adobe-red, #eb1000);
+  font-weight: 700;
+}
 .auth-card button {
   width: 100%;
   margin: 10px 0;
@@ -582,7 +586,9 @@ button,
   border-radius: 25px;
   background: var(--primary);
   color: #fff;
-  transition: background 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 button:hover,
 .button:hover,

@@ -61,7 +61,7 @@ Run the unit tests with `npm test`.
 
 ## Data model
 
-Books and copies are isolated in `MONGODB_BOOKS_DB`; students, loans, holds, fines, notifications, and contact requests are isolated in `MONGODB_STUDENTS_DB`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice. Registration requires a library-card upload and a college email such as `2026ece01name@buie.ac.in`; students contact the librarian for extensions rather than extending online.
+Books and copies are isolated in `MONGODB_BOOKS_DB`; students, loans, holds, fines, notifications, and contact requests are isolated in `MONGODB_STUDENTS_DB`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice. Registration accepts any email string and an optional library-card upload; students contact the librarian for extensions rather than extending online.
 
 ## API contract
 
