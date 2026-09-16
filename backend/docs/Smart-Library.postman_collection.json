@@ -1,0 +1,14 @@
+{
+  "info": { "name": "Smart Library API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000" }, { "key": "studentToken", "value": "" }, { "key": "adminToken", "value": "" }],
+  "item": [
+    { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } },
+    { "name": "Register student", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"student_id\": \"001/26\",\n  \"name\": \"Ada Student\",\n  \"email\": \"ada@example.edu\",\n  \"password\": \"password123\"\n}"}, "url": "{{baseUrl}}/auth/register" } },
+    { "name": "Student login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"student_id\":\"001/26\",\"password\":\"password123\"}"}, "url": "{{baseUrl}}/auth/login" } },
+    { "name": "Search books", "request": { "method": "GET", "url": "{{baseUrl}}/api/books/search?q=history" } },
+    { "name": "My books", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{studentToken}}"}], "url": "{{baseUrl}}/api/student/books" } },
+    { "name": "Place hold", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{studentToken}}"},{"key":"Content-Type","value":"application/json"}], "body":{"mode":"raw","raw":"{\"book_id\":1}"}, "url":"{{baseUrl}}/api/student/hold" } },
+    { "name": "Scan checkout", "request": { "method":"POST", "header":[{"key":"Content-Type","value":"application/json"}], "body":{"mode":"raw","raw":"{\"action\":\"checkout\",\"barcode\":\"9780000000001-1-1\",\"student_id\":\"001/26\"}"}, "url":"{{baseUrl}}/api/scan" } },
+    { "name": "Admin inventory", "request": { "method":"GET", "header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}], "url":"{{baseUrl}}/api/admin/inventory" } }
+  ]
+}

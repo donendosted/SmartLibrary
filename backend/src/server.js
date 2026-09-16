@@ -1,0 +1,1 @@
+import app from './app.js'; import { config } from './config.js'; import { startJobs } from './jobs.js'; app.listen(config.port,()=>console.info(`Smart Library API listening on ${config.port}`)); startJobs();
