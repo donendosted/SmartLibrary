@@ -1,0 +1,43 @@
+"use client";
+import { FormEvent, useState } from "react";
+export default function Settings() {
+  const [saved, setSaved] = useState(false);
+  function save(e: FormEvent) {
+    e.preventDefault();
+    setSaved(true);
+  }
+  return (
+    <>
+      <h1>Settings</h1>
+      <p className="muted">Default rules for library circulation.</p>
+      <form className="card form" onSubmit={save}>
+        {[
+          ["Loan duration (days)", "14"],
+          ["Daily fine rate (₹)", "5"],
+          ["Maximum renewals", "2"],
+          ["Hold expiry (days)", "3"],
+        ].map(([label, value]) => (
+          <label className="form-row" key={label}>
+            {label}
+            <input type="number" defaultValue={value} />
+          </label>
+        ))}
+        {saved && (
+          <p className="ok">
+            Settings saved locally. Connect a settings endpoint to persist these
+            rules.
+          </p>
+        )}
+        <button className="button">Save settings</button>
+      </form>
+      <style jsx>{`
+        .form {
+          max-width: 540px;
+        }
+        .ok {
+          color: #065f46;
+        }
+      `}</style>
+    </>
+  );
+}

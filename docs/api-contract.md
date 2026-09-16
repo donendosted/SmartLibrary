@@ -18,29 +18,29 @@ Errors use `{ "error": "Human-readable message", "code": "MACHINE_CODE" }`. Coll
 
 ## Student routes
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| GET | `/api/student/profile` | Current account and dashboard counts |
-| GET | `/api/student/books` | Current loans |
-| GET | `/api/books/search?q=&category=&page=&limit=` | Search catalogue |
-| GET | `/api/books/:id` | Book and availability details |
-| POST | `/api/student/hold` | `{ book_id }` creates a hold |
-| GET | `/api/student/holds` | Current holds |
-| POST | `/api/student/extend` | `{ transaction_id }` renews a loan |
-| GET | `/api/notifications` | Current user's notifications |
+| Method | Path                                          | Purpose                              |
+| ------ | --------------------------------------------- | ------------------------------------ |
+| GET    | `/api/student/profile`                        | Current account and dashboard counts |
+| GET    | `/api/student/books`                          | Current loans                        |
+| GET    | `/api/books/search?q=&category=&page=&limit=` | Search catalogue                     |
+| GET    | `/api/books/:id`                              | Book and availability details        |
+| POST   | `/api/student/hold`                           | `{ book_id }` creates a hold         |
+| GET    | `/api/student/holds`                          | Current holds                        |
+| POST   | `/api/student/extend`                         | `{ transaction_id }` renews a loan   |
+| GET    | `/api/notifications`                          | Current user's notifications         |
 
 ## Librarian routes
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/api/scan` | `{ barcode, student_id?, action? }` checkout/return scan |
-| GET | `/api/admin/inventory` | Catalogue with copy counts |
-| POST | `/api/admin/book` | Create book/copies |
-| PUT | `/api/admin/book/:id` | Edit book |
-| POST | `/api/admin/book/import` | CSV multipart upload |
-| GET | `/api/admin/users` | Students |
-| GET | `/api/admin/users/:id` | Student profile/history |
-| GET | `/api/admin/transactions` | Loans and returns |
-| GET | `/api/admin/reports/overdue` | Overdue report |
+| Method | Path                         | Purpose                                                  |
+| ------ | ---------------------------- | -------------------------------------------------------- |
+| POST   | `/api/scan`                  | `{ barcode, student_id?, action? }` checkout/return scan |
+| GET    | `/api/admin/inventory`       | Catalogue with copy counts                               |
+| POST   | `/api/admin/book`            | Create book/copies                                       |
+| PUT    | `/api/admin/book/:id`        | Edit book                                                |
+| POST   | `/api/admin/book/import`     | CSV multipart upload                                     |
+| GET    | `/api/admin/users`           | Students                                                 |
+| GET    | `/api/admin/users/:id`       | Student profile/history                                  |
+| GET    | `/api/admin/transactions`    | Loans and returns                                        |
+| GET    | `/api/admin/reports/overdue` | Overdue report                                           |
 
 `student_id` values must match `^\\d{3}/\\d{2}$`, for example `001/26`.

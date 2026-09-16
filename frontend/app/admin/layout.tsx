@@ -1,0 +1,9 @@
+import Protected from "@/components/Protected";
+import AdminShell from "@/components/AdminShell";
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <Protected>
+      <AdminShell>{children}</AdminShell>
+    </Protected>
+  );
+}

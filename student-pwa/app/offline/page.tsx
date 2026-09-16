@@ -1,1 +1,0 @@
-export default function Offline(){return <main className="auth"><section className="auth-card"><p className="eyebrow">SMART LIBRARY</p><h1>You&apos;re offline</h1><p>Reconnect to refresh your library account. Recently visited pages remain available.</p></section></main>}
