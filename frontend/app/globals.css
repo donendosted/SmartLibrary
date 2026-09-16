@@ -559,3 +559,148 @@ th {
   background: var(--danger);
   border-color: var(--danger);
 }
+
+/* Adobe-inspired marketing system: cream canvas, charcoal tiles, cobalt actions. */
+:root {
+  --blue: #3b63fb;
+  --ink: #2c2c2c;
+  --muted: #686868;
+  --line: #dadada;
+  --soft: #f3f3f3;
+  --primary: #3b63fb;
+  --primary-hover: #274dea;
+  --adobe-red: #eb1000;
+}
+body {
+  background: #fff;
+  color: var(--ink);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+button,
+.button,
+.button-link {
+  border-radius: 25px;
+  background: var(--primary);
+  color: #fff;
+  transition: background 160ms ease, transform 160ms ease;
+}
+button:hover,
+.button:hover,
+.button-link:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.shell {
+  background: #fff;
+}
+.shell header,
+.shell > nav {
+  background: #fff;
+}
+.brand::first-letter {
+  color: var(--adobe-red);
+}
+.hero {
+  padding: 28px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+}
+.hero p,
+.hero .eyebrow {
+  color: #fff;
+}
+.stats div,
+.book-card,
+.list-card,
+.empty {
+  border: 0;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+}
+.stats span,
+.book-card p,
+.list-card p,
+.empty p {
+  color: #d6d6d6;
+}
+.stats b {
+  color: #fff;
+}
+.account-card,
+.auth-card,
+.card {
+  border: 0;
+  border-radius: 20px;
+  background: var(--soft);
+}
+.detail {
+  padding: 30px;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+}
+.detail p,
+.detail .lead {
+  color: #e3e3e3;
+}
+.cover {
+  border-radius: 16px;
+}
+.table-wrap {
+  border: 0;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+}
+.table-wrap th,
+.table-wrap td {
+  border-color: #505050;
+}
+.table-wrap th {
+  color: #d6d6d6;
+}
+.bottom-nav {
+  border-radius: 20px 20px 0 0;
+  background: var(--ink);
+}
+.bottom-nav a {
+  color: #fff;
+}
+.bottom-nav a.active {
+  color: #8da5ff;
+}
+.admin-shell {
+  background: #fff;
+}
+.admin-shell aside {
+  background: var(--ink);
+  border: 0;
+}
+.admin-brand,
+.admin-shell nav a,
+.admin-shell .signout {
+  color: #fff;
+}
+.admin-shell nav a.active,
+.admin-shell nav a:hover {
+  background: var(--primary);
+  color: #fff;
+}
+@media (max-width: 700px) {
+  .hero,
+  .detail,
+  .account-card,
+  .card,
+  .table-wrap {
+    border-radius: 16px;
+  }
+  .admin-shell {
+    display: block;
+  }
+  .admin-shell aside {
+    border-radius: 0 0 16px 16px;
+  }
+}
