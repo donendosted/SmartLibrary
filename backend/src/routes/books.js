@@ -1,3 +1,22 @@
-import { Router } from 'express'; import { query } from '../db.js'; import { apiError,pagination,paged } from '../utils.js'; const router=Router();
-router.get('/search',async(req,res)=>{const {page,limit,offset}=pagination(req);const term=`%${req.query.q||''}%`;const values=[term,term,limit,offset];const result=await query("SELECT b.*,count(c.id) total_copies,count(c.id) FILTER(WHERE c.status='available') available_copies,count(*) OVER() total FROM books b LEFT JOIN copies c ON c.book_id=b.id WHERE b.title ILIKE $1 OR b.author ILIKE $2 GROUP BY b.id ORDER BY b.title LIMIT $3 OFFSET $4",values);res.json(paged(result.rows,result.rows[0]?.total||0,page,limit));});
-router.get('/:id',async(req,res)=>{const {rows}=await query("SELECT b.*,count(c.id) total_copies,count(c.id) FILTER(WHERE c.status='available') available_copies FROM books b LEFT JOIN copies c ON c.book_id=b.id WHERE b.id=$1 GROUP BY b.id",[req.params.id]);if(!rows[0])throw apiError(404,'Book not found','BOOK_NOT_FOUND');res.json(rows[0]);}); export default router;
+import { Router } from 'express';
+import { db, id, isId, serialize } from '../db.js';
+import { apiError, pagination, paged } from '../utils.js';
+const router = Router();
+async function decorate(book) {
+  const copies = await db().collection('copies').find({ book_id: book._id.toString() }).toArray();
+  return serialize({ ...book, total_copies: copies.length, available_copies: copies.filter((copy) => copy.status === 'available').length });
+}
+router.get('/search', async (req, res) => {
+  const { page, limit, offset } = pagination(req); const term = String(req.query.q || '');
+  const filter = term ? { $or: [{ title: { $regex: term, $options: 'i' } }, { author: { $regex: term, $options: 'i' } }] } : {};
+  if (req.query.category) filter.category = req.query.category;
+  const [books, total] = await Promise.all([db().collection('books').find(filter).sort({ title: 1 }).skip(offset).limit(limit).toArray(), db().collection('books').countDocuments(filter)]);
+  res.json(paged(await Promise.all(books.map(decorate)), total, page, limit));
+});
+router.get('/:id', async (req, res) => {
+  if (!isId(req.params.id)) throw apiError(404, 'Book not found', 'BOOK_NOT_FOUND');
+  const book = await db().collection('books').findOne({ _id: id(req.params.id) });
+  if (!book) throw apiError(404, 'Book not found', 'BOOK_NOT_FOUND');
+  res.json(await decorate(book));
+});
+export default router;

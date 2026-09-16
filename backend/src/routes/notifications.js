@@ -1,1 +1,6 @@
-import { Router } from 'express'; import { query } from '../db.js'; import { authenticate } from '../middleware/auth.js'; const router=Router(); router.use(authenticate); router.get('/',async(req,res)=>{const {rows}=await query('SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC',[req.user.user_id]);res.json({data:rows});}); export default router;
+import { Router } from 'express';
+import { db, serializeMany } from '../db.js';
+import { authenticate } from '../middleware/auth.js';
+const router = Router(); router.use(authenticate);
+router.get('/', async (req, res) => res.json({ data: serializeMany(await db().collection('notifications').find({ user_id: req.user.user_id }).sort({ created_at: -1 }).toArray()) }));
+export default router;

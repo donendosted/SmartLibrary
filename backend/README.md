@@ -1,16 +1,58 @@
 # Smart Library API
 
-Express + PostgreSQL backend for the Smart Library MVP. Requires Node 20+ and PostgreSQL 14+.
+Express + MongoDB backend for the Smart Library MVP. It uses the official MongoDB Node.js driver and reads its connection string exclusively from `MONGODB_URI`.
 
 ## Run locally
 
-1. Copy `.env.example` to `.env` and set `DATABASE_URL` and a secure `JWT_SECRET`.
-2. Run `psql "$DATABASE_URL" -f db/schema.sql`.
-3. Run `npm install`, then `npm run dev`.
+Prerequisites: Node.js 20+ and either a local MongoDB 7+ server or a MongoDB Atlas cluster.
 
-Create the initial librarian account with `npm run seed:librarian -- admin change-this-password`. The final optional argument sets any non-`student` librarian role.
+1. Install dependencies:
 
-`GET /health` verifies the API and database connection. Run `npm test` for unit tests.
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. Create your local environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Set `MONGODB_URI` in `.env`. For a local server, keep the supplied default:
+
+   ```env
+   MONGODB_URI=mongodb://127.0.0.1:27017/smart_library
+   JWT_SECRET=replace-with-a-long-random-secret
+   ```
+
+   For Atlas, use the complete connection string from the Atlas **Connect** dialog, for example `mongodb+srv://<user>:<password>@<cluster>/smart_library?retryWrites=true&w=majority`.
+
+4. Start MongoDB if you are running it locally, then launch the API:
+
+   ```bash
+   npm run dev
+   ```
+
+   The server creates required collections and indexes automatically on startup. Confirm it is connected with:
+
+   ```bash
+   curl http://localhost:4000/health
+   ```
+
+5. Create a librarian account for the admin PWA:
+
+   ```bash
+   npm run seed:librarian -- admin change-this-password admin
+   ```
+
+   The final value is any non-`student` role, such as `admin` or `librarian_001`.
+
+Run the unit tests with `npm test`.
+
+## Data model
+
+MongoDB collections are `users`, `books`, `copies`, `transactions`, `holds`, `fines`, and `notifications`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice.
 
 ## API contract
 
@@ -18,4 +60,4 @@ The complete contract and request examples are in [docs/API_CONTRACT.md](docs/AP
 
 ## Deployment
 
-On Render, create a PostgreSQL database and a Node web service rooted at `backend`; use build command `npm install`, start command `npm start`, and run `db/schema.sql` once against the provisioned database. Set `CORS_ORIGINS` to both Vercel URLs (comma separated). Free instances may sleep.
+On Render, create a Node web service rooted at `backend` and use build command `npm install` and start command `npm start`. Supply `MONGODB_URI` from MongoDB Atlas or another reachable MongoDB provider, plus `JWT_SECRET` and `CORS_ORIGINS` (the two Vercel URLs, comma-separated). Render's managed PostgreSQL service is no longer required.

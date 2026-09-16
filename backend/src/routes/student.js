@@ -1,8 +1,38 @@
-import { Router } from 'express'; import { query } from '../db.js'; import { authenticate, requireStudent } from '../middleware/auth.js'; import { apiError, pagination, paged } from '../utils.js';
-const router=Router(); router.use(authenticate,requireStudent);
-router.get('/books',async(req,res)=>{const {rows}=await query("SELECT t.id,b.title,b.author,t.due_date,t.renewal_count,COALESCE(sum(f.amount) FILTER(WHERE f.paid_at IS NULL),0) fine_amount FROM transactions t JOIN copies c ON c.id=t.copy_id JOIN books b ON b.id=c.book_id LEFT JOIN fines f ON f.transaction_id=t.id WHERE t.user_id=$1 AND t.status='active' GROUP BY t.id,b.id",[req.user.user_id]);res.json({data:rows});});
-router.get('/profile',async(req,res)=>{const {rows}=await query('SELECT id,student_id,name,email,phone,status,created_at FROM users WHERE id=$1',[req.user.user_id]);res.json(rows[0]);});
-router.post('/hold',async(req,res)=>{const {book_id}=req.body;if(!book_id)throw apiError(400,'book_id is required','VALIDATION_ERROR');const {rows}=await query('INSERT INTO holds(book_id,user_id) VALUES($1,$2) RETURNING *',[book_id,req.user.user_id]);res.status(201).json(rows[0]);});
-router.get('/holds',async(req,res)=>{const {rows}=await query("SELECT h.*,b.title,b.author,(SELECT count(*) FROM holds h2 WHERE h2.book_id=h.book_id AND h2.status='waiting' AND h2.created_at<=h.created_at) queue_position FROM holds h JOIN books b ON b.id=h.book_id WHERE h.user_id=$1 AND h.status IN ('waiting','ready') ORDER BY h.created_at DESC",[req.user.user_id]);res.json({data:rows});});
-router.post('/extend',async(req,res)=>{const {transaction_id}=req.body;const {rows}=await query("UPDATE transactions SET due_date=due_date+interval '14 days',renewal_count=renewal_count+1 WHERE id=$1 AND user_id=$2 AND status='active' AND renewal_count<2 RETURNING *",[transaction_id,req.user.user_id]);if(!rows[0])throw apiError(409,'Transaction cannot be renewed','RENEWAL_UNAVAILABLE');res.json(rows[0]);});
+import { Router } from 'express';
+import { db, id, isId, serialize, serializeMany } from '../db.js';
+import { authenticate, requireStudent } from '../middleware/auth.js';
+import { apiError } from '../utils.js';
+import { config } from '../config.js';
+const router = Router(); router.use(authenticate, requireStudent);
+
+router.get('/books', async (req, res) => {
+  const database = db(); const transactions = await database.collection('transactions').find({ user_id: req.user.user_id, status: 'active' }).toArray();
+  const data = await Promise.all(transactions.map(async (transaction) => {
+    const copy = await database.collection('copies').findOne({ _id: id(transaction.copy_id) }); const book = copy && await database.collection('books').findOne({ _id: copy.book_id });
+    const fines = await database.collection('fines').find({ transaction_id: transaction._id.toString(), paid_at: { $exists: false } }).toArray();
+    return { ...serialize(transaction), title: book?.title, author: book?.author, fine_amount: fines.reduce((sum, fine) => sum + fine.amount, 0) };
+  }));
+  res.json({ data });
+});
+router.get('/profile', async (req, res) => {
+  const user = await db().collection('users').findOne({ _id: id(req.user.user_id) }, { projection: { password_hash: 0 } });
+  if (!user) throw apiError(404, 'Student not found', 'STUDENT_NOT_FOUND'); res.json(serialize(user));
+});
+router.post('/hold', async (req, res) => {
+  const { book_id } = req.body; if (!isId(book_id) || !await db().collection('books').findOne({ _id: id(book_id) })) throw apiError(404, 'Book not found', 'BOOK_NOT_FOUND');
+  const existing = await db().collection('holds').findOne({ book_id, user_id: req.user.user_id, status: { $in: ['waiting', 'ready'] } });
+  if (existing) throw apiError(409, 'You already have an active hold for this book', 'DUPLICATE_HOLD');
+  const hold = { book_id, user_id: req.user.user_id, status: 'waiting', created_at: new Date() }; hold._id = (await db().collection('holds').insertOne(hold)).insertedId;
+  res.status(201).json(serialize(hold));
+});
+router.get('/holds', async (req, res) => {
+  const database = db(); const holds = await database.collection('holds').find({ user_id: req.user.user_id, status: { $in: ['waiting', 'ready'] } }).sort({ created_at: -1 }).toArray();
+  const data = await Promise.all(holds.map(async (hold) => { const book = await database.collection('books').findOne({ _id: id(hold.book_id) }); const queue_position = await database.collection('holds').countDocuments({ book_id: hold.book_id, status: 'waiting', created_at: { $lte: hold.created_at } }); return { ...serialize(hold), title: book?.title, author: book?.author, queue_position }; }));
+  res.json({ data });
+});
+router.post('/extend', async (req, res) => {
+  if (!isId(req.body.transaction_id)) throw apiError(409, 'Transaction cannot be renewed', 'RENEWAL_UNAVAILABLE');
+  const transaction = await db().collection('transactions').findOneAndUpdate({ _id: id(req.body.transaction_id), user_id: req.user.user_id, status: 'active', renewal_count: { $lt: 2 } }, { $inc: { renewal_count: 1 }, $set: { due_date: new Date(Date.now() + config.loanDurationDays * 86400000) } }, { returnDocument: 'after' });
+  if (!transaction) throw apiError(409, 'Transaction cannot be renewed', 'RENEWAL_UNAVAILABLE'); res.json(serialize(transaction));
+});
 export default router;

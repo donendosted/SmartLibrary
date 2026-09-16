@@ -1,7 +1,32 @@
-import { Router } from 'express'; import bcrypt from 'bcryptjs'; import jwt from 'jsonwebtoken'; import { query } from '../db.js'; import { config } from '../config.js'; import { apiError } from '../utils.js'; import { validateStudentId } from '../middleware/auth.js';
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { db, serialize } from '../db.js';
+import { config } from '../config.js';
+import { apiError } from '../utils.js';
+import { validateStudentId } from '../middleware/auth.js';
+
 const router = Router();
-const token = (user) => jwt.sign({ user_id: user.id, student_id: user.student_id || undefined, role: user.role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
-router.post('/register', validateStudentId, async (req,res) => { const {student_id,name,email,password,phone}=req.body; if(!name||!email||!password) throw apiError(400,'name, email and password are required','VALIDATION_ERROR'); const hash=await bcrypt.hash(password,12); const {rows}=await query("INSERT INTO users(student_id,name,email,phone,password_hash,role) VALUES($1,$2,$3,$4,$5,'student') RETURNING id,student_id,name,email,role",[student_id,name,email,phone||null,hash]); res.status(201).json({user:rows[0],token:token(rows[0])}); });
-router.post('/login', async (req,res) => { const {student_id,password}=req.body; const {rows}=await query("SELECT * FROM users WHERE student_id=$1 AND role='student'",[student_id]); if(!rows[0]||!await bcrypt.compare(password||'',rows[0].password_hash)) throw apiError(401,'Invalid credentials','INVALID_CREDENTIALS'); if(rows[0].status!=='active') throw apiError(403,'Account suspended','ACCOUNT_SUSPENDED'); res.json({user:{id:rows[0].id,student_id:rows[0].student_id,name:rows[0].name,email:rows[0].email,role:'student'},token:token(rows[0])}); });
-router.post('/librarian/login', async(req,res)=>{const {username,password}=req.body; const {rows}=await query("SELECT * FROM users WHERE username=$1 AND role<>'student'",[username]); if(!rows[0]||!await bcrypt.compare(password||'',rows[0].password_hash)) throw apiError(401,'Invalid credentials','INVALID_CREDENTIALS'); res.json({user:{id:rows[0].id,name:rows[0].name,role:rows[0].role},token:token(rows[0])});});
+const publicUser = (user) => ({ id: user._id.toString(), student_id: user.student_id, name: user.name, email: user.email, role: user.role });
+const token = (user) => jwt.sign({ user_id: user._id.toString(), student_id: user.student_id, role: user.role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+
+router.post('/register', validateStudentId, async (req, res) => {
+  const { student_id, name, email, password, phone } = req.body;
+  if (!name || !email || !password) throw apiError(400, 'name, email and password are required', 'VALIDATION_ERROR');
+  const user = { student_id, name, email: email.toLowerCase(), phone: phone || null, password_hash: await bcrypt.hash(password, 12), role: 'student', status: 'active', created_at: new Date() };
+  try { user._id = (await db().collection('users').insertOne(user)).insertedId; }
+  catch (error) { if (error.code === 11000) throw apiError(409, 'Student ID or email already exists', 'DUPLICATE_USER'); throw error; }
+  res.status(201).json({ user: publicUser(user), token: token(user) });
+});
+router.post('/login', async (req, res) => {
+  const user = await db().collection('users').findOne({ student_id: req.body.student_id, role: 'student' });
+  if (!user || !await bcrypt.compare(req.body.password || '', user.password_hash)) throw apiError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
+  if (user.status !== 'active') throw apiError(403, 'Account suspended', 'ACCOUNT_SUSPENDED');
+  res.json({ user: publicUser(user), token: token(user) });
+});
+router.post('/librarian/login', async (req, res) => {
+  const user = await db().collection('users').findOne({ username: req.body.username, role: { $ne: 'student' } });
+  if (!user || !await bcrypt.compare(req.body.password || '', user.password_hash)) throw apiError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
+  res.json({ user: publicUser(user), token: token(user) });
+});
 export default router;

@@ -1,26 +1,30 @@
-import pg from 'pg';
+import { MongoClient, ObjectId } from 'mongodb';
 import { config } from './config.js';
 
-const { Pool } = pg;
-export const pool = new Pool({
-  connectionString: config.databaseUrl,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 10
-});
+if (!config.mongodbUri) throw new Error('MONGODB_URI must be set');
+const client = new MongoClient(config.mongodbUri);
+let database;
 
-export const query = (text, params) => pool.query(text, params);
-
-export async function withTransaction(work) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const result = await work(client);
-    await client.query('COMMIT');
-    return result;
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
+export async function connectDatabase() {
+  if (!database) {
+    await client.connect();
+    database = client.db();
+    await Promise.all([
+      database.collection('users').createIndex({ student_id: 1 }, { unique: true, sparse: true }),
+      database.collection('users').createIndex({ username: 1 }, { unique: true, sparse: true }),
+      database.collection('users').createIndex({ email: 1 }, { unique: true }),
+      database.collection('books').createIndex({ isbn: 1 }, { unique: true, sparse: true }),
+      database.collection('copies').createIndex({ barcode: 1 }, { unique: true }),
+      database.collection('transactions').createIndex({ copy_id: 1, status: 1 }),
+      database.collection('holds').createIndex({ book_id: 1, user_id: 1, status: 1 }),
+      database.collection('notifications').createIndex({ user_id: 1, created_at: -1 })
+    ]);
   }
+  return database;
 }
+export const db = () => { if (!database) throw new Error('Database has not connected yet'); return database; };
+export const id = (value) => new ObjectId(String(value));
+export const isId = (value) => ObjectId.isValid(String(value));
+export const serialize = (document) => document && ({ ...document, id: document._id?.toString(), _id: undefined });
+export const serializeMany = (documents) => documents.map(serialize);
+export async function closeDatabase() { await client.close(); database = undefined; }

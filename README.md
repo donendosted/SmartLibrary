@@ -2,13 +2,13 @@
 
 Smart Library is a three-application monorepo:
 
-- `backend` — Express API and PostgreSQL schema
+- `backend` — Express API backed by MongoDB
 - `student-pwa` — student-facing Next.js PWA
 - `librarian-pwa` — librarian-facing Next.js PWA
 
 ## Run locally
 
-Each project has its own setup instructions and `.env.example`. Start PostgreSQL, apply the backend schema, start the API, then start either PWA with `NEXT_PUBLIC_API_URL=http://localhost:4000`.
+Each project has its own setup instructions and `.env.example`. Start MongoDB (or configure MongoDB Atlas), set `backend/MONGODB_URI`, start the API, then start either PWA with `NEXT_PUBLIC_API_URL=http://localhost:4000`.
 
 ## Deployment targets
 
