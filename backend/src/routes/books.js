@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { db, id, isId, serialize } from "../db.js";
+import { db, booksDb, id, isId, serialize } from "../db.js";
 import { apiError, pagination, paged } from "../utils.js";
 const router = Router();
 async function decorate(book) {
-  const copies = await db()
+  const copies = await booksDb()
     .collection("copies")
     .find({ book_id: book._id.toString() })
     .toArray();
@@ -27,21 +27,21 @@ router.get("/search", async (req, res) => {
     : {};
   if (req.query.category) filter.category = req.query.category;
   const [books, total] = await Promise.all([
-    db()
+    booksDb()
       .collection("books")
       .find(filter)
       .sort({ title: 1 })
       .skip(offset)
       .limit(limit)
       .toArray(),
-    db().collection("books").countDocuments(filter),
+    booksDb().collection("books").countDocuments(filter),
   ]);
   res.json(paged(await Promise.all(books.map(decorate)), total, page, limit));
 });
 router.get("/:id", async (req, res) => {
   if (!isId(req.params.id))
     throw apiError(404, "Book not found", "BOOK_NOT_FOUND");
-  const book = await db()
+  const book = await booksDb()
     .collection("books")
     .findOne({ _id: id(req.params.id) });
   if (!book) throw apiError(404, "Book not found", "BOOK_NOT_FOUND");

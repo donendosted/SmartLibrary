@@ -4,24 +4,21 @@ import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { BookCard } from "@/components/book-card";
 import { api } from "@/lib/api";
-import { sampleSearch } from "@/lib/sample-data";
 import type { Book } from "@/lib/types";
 export default function Books() {
   const [q, setQ] = useState(""),
-    [books, setBooks] = useState<Book[]>(sampleSearch),
+    [books, setBooks] = useState<Book[]>([]),
     [message, setMessage] = useState("");
   async function search() {
     try {
       setBooks(await api.search(q));
       setMessage("");
-    } catch {
-      setBooks(
-        sampleSearch.filter((b) =>
-          (b.title + b.author).toLowerCase().includes(q.toLowerCase()),
-        ),
-      );
+    } catch (error) {
+      setBooks([]);
       setMessage(
-        "Showing matching demo results while the server is unavailable.",
+        error instanceof Error
+          ? error.message
+          : "Unable to search the catalogue.",
       );
     }
   }

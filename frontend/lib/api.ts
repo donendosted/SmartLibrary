@@ -49,10 +49,5 @@ export const api = {
       body: JSON.stringify({ book_id }),
     }),
   holds: () => request<Hold[]>("/api/student/holds"),
-  extend: (book_id: number) =>
-    request("/api/student/extend", {
-      method: "POST",
-      body: JSON.stringify({ book_id }),
-    }),
   notifications: () => request<Notification[]>("/api/notifications"),
 };

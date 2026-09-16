@@ -38,6 +38,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ))}
       </nav>
       <main className="page">{children}</main>
+      <nav className="bottom-nav" aria-label="Mobile navigation">
+        {links.slice(0, 5).map(([href, label]) => (
+          <Link
+            key={href}
+            href={href}
+            className={path === href ? "active" : ""}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

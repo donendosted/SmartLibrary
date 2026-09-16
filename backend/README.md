@@ -22,7 +22,9 @@ Prerequisites: Node.js 20+ and either a local MongoDB 7+ server or a MongoDB Atl
 3. Set `MONGODB_URI` in `.env`. For a local server, keep the supplied default:
 
    ```env
-   MONGODB_URI=mongodb://127.0.0.1:27017/smart_library
+   MONGODB_URI=mongodb://127.0.0.1:27017
+   MONGODB_BOOKS_DB=smart_library_books
+   MONGODB_STUDENTS_DB=smart_library_students
    JWT_SECRET=replace-with-a-long-random-secret
    ```
 
@@ -40,19 +42,26 @@ Prerequisites: Node.js 20+ and either a local MongoDB 7+ server or a MongoDB Atl
    curl http://localhost:4000/health
    ```
 
-5. Create a librarian account for the admin PWA:
+5. Create a librarian account for the admin PWA. Pass the username, password, and role as arguments. The password is never stored in plaintext and is not echoed when supplied explicitly:
 
    ```bash
-   npm run seed:librarian -- admin change-this-password admin
+   npm run seed:librarian -- admin '<choose-a-long-random-password>' admin
    ```
 
-   The final value is any non-`student` role, such as `admin` or `librarian_001`.
+   The final value must be any non-`student` role, such as `admin` or `librarian_001`.
+   If you omit the password, the script generates a one-time random password and prints it once:
+
+   ```bash
+   npm run seed:librarian -- admin
+   ```
+
+   You can also use `LIBRARIAN_USERNAME`, `LIBRARIAN_PASSWORD`, and `LIBRARIAN_ROLE` environment variables. For example, after running the command, use the resulting username and password at the frontend's `/librarian-login` route. Run the seed command again with a new password to rotate credentials.
 
 Run the unit tests with `npm test`.
 
 ## Data model
 
-MongoDB collections are `users`, `books`, `copies`, `transactions`, `holds`, `fines`, and `notifications`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice.
+Books and copies are isolated in `MONGODB_BOOKS_DB`; students, loans, holds, fines, notifications, and contact requests are isolated in `MONGODB_STUDENTS_DB`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice. Registration requires a library-card upload and a college email such as `2026ece01name@buie.ac.in`; students contact the librarian for extensions rather than extending online.
 
 ## API contract
 

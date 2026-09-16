@@ -20,7 +20,7 @@ app.use(
         : cb(new Error("Origin not allowed"), false),
   }),
 );
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "8mb" }));
 app.use(morgan("combined"));
 app.get("/health", async (_req, res) => {
   await db().command({ ping: 1 });

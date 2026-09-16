@@ -12,35 +12,17 @@ type Book = {
   total_copies?: number;
   available_copies?: number;
 };
-const seed = [
-  {
-    id: 1,
-    isbn: "9780743273565",
-    title: "The Great Gatsby",
-    author: "F. Scott Fitzgerald",
-    category: "Fiction",
-    total_copies: 4,
-    available_copies: 2,
-  },
-  {
-    id: 2,
-    isbn: "9780735211292",
-    title: "Atomic Habits",
-    author: "James Clear",
-    category: "Self-help",
-    total_copies: 3,
-    available_copies: 0,
-  },
-];
 export default function Inventory() {
-  const [books, setBooks] = useState<Book[]>(seed),
+  const [books, setBooks] = useState<Book[]>([]),
     [query, setQuery] = useState(""),
     [open, setOpen] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
     api<unknown>("/api/admin/inventory?limit=100")
-      .then((r) => setBooks(unwrap(r as { data: Book[] }) || seed))
-      .catch(() => {});
+      .then((r) => setBooks(unwrap(r as { data: Book[] }) || []))
+      .catch((e) =>
+        setError(e instanceof Error ? e.message : "Unable to load inventory."),
+      );
   }, []);
   const visible = useMemo(
     () =>

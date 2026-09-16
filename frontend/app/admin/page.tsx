@@ -10,24 +10,8 @@ type Transaction = {
   checkout_date?: string;
   status: string;
 };
-const fallback = [
-  {
-    id: 1,
-    student_id: "001/26",
-    book_title: "The Great Gatsby",
-    checkout_date: "2026-09-15",
-    status: "active",
-  },
-  {
-    id: 2,
-    student_id: "042/25",
-    book_title: "Atomic Habits",
-    checkout_date: "2026-09-14",
-    status: "completed",
-  },
-];
 export default function Dashboard() {
-  const [transactions, setTransactions] = useState<Transaction[]>(fallback);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState({
     books: "—",
     available: "—",
@@ -44,9 +28,7 @@ export default function Dashboard() {
       })
       .catch(() => {});
     api<unknown>("/api/admin/transactions?limit=10")
-      .then((r) =>
-        setTransactions(unwrap(r as { data: Transaction[] }) || fallback),
-      )
+      .then((r) => setTransactions(unwrap(r as { data: Transaction[] }) || []))
       .catch(() => {});
   }, []);
   const cards = [
@@ -101,12 +83,9 @@ export default function Dashboard() {
         <article className="card">
           <h2>This week</h2>
           <div className="bars">
-            {[42, 65, 32, 78, 53, 26, 18].map((h, i) => (
-              <div key={i}>
-                <i style={{ height: `${h}%` }} />
-                <span>{["M", "T", "W", "T", "F", "S", "S"][i]}</span>
-              </div>
-            ))}
+            <p className="muted">
+              Daily activity will appear once transactions are recorded.
+            </p>
           </div>
           <p className="muted">Checkouts by day</p>
         </article>

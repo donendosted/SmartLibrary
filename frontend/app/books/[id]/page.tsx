@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { api } from "@/lib/api";
-import { sampleSearch } from "@/lib/sample-data";
 import type { Book } from "@/lib/types";
 
 export default function Details() {
@@ -19,20 +18,18 @@ export default function Details() {
     api
       .book(id)
       .then(setBook)
-      .catch(() => {
-        setBook(
-          sampleSearch.find((item) => item.id === Number(id)) ||
-            sampleSearch[0],
-        );
-        setMessage("Showing preview data while the server is unavailable.");
-      });
+      .catch((error) =>
+        setMessage(
+          error instanceof Error ? error.message : "Unable to load this book.",
+        ),
+      );
   }, [id]);
 
   if (!book)
     return (
       <Guard>
         <AppShell>
-          <p>Loading book…</p>
+          <p>{message || "Loading book…"}</p>
         </AppShell>
       </Guard>
     );

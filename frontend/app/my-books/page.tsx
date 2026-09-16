@@ -3,24 +3,23 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { api } from "@/lib/api";
-import { sampleBooks } from "@/lib/sample-data";
 import type { Book } from "@/lib/types";
 export default function MyBooks() {
-  const [books, setBooks] = useState<Book[]>(sampleBooks),
+  const [books, setBooks] = useState<Book[]>([]),
     [message, setMessage] = useState("");
   useEffect(() => {
     api
       .books()
       .then(setBooks)
-      .catch(() =>
-        setMessage("Unable to refresh books; displaying saved data."),
-      );
+      .catch(() => setMessage("Unable to load your books right now."));
   }, []);
   return (
     <Guard>
       <AppShell>
         <h1>My books</h1>
-        <p className="lead">Renew eligible books before their due date.</p>
+        <p className="lead">
+          Need more time? Contact the librarian to request an extension.
+        </p>
         {message && <p className="notice">{message}</p>}
         <div className="table-wrap">
           <table>
@@ -45,23 +44,9 @@ export default function MyBooks() {
                   <td>{b.renewal_count || 0}</td>
                   <td>₹{b.fine_amount || 0}</td>
                   <td>
-                    <button
-                      className="small"
-                      onClick={async () => {
-                        try {
-                          await api.extend(b.id);
-                          setMessage("Extension requested successfully.");
-                        } catch (e) {
-                          setMessage(
-                            e instanceof Error
-                              ? e.message
-                              : "Unable to extend.",
-                          );
-                        }
-                      }}
-                    >
-                      Extend
-                    </button>
+                    <a className="small button-link" href="/contact">
+                      Contact librarian
+                    </a>
                   </td>
                 </tr>
               ))}

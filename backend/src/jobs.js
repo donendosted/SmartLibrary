@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { db, id } from "./db.js";
+import { db, booksDb, id } from "./db.js";
 export function startJobs() {
   cron.schedule("0 9 * * *", async () => {
     try {
@@ -9,12 +9,12 @@ export function startJobs() {
         .find({ status: "active", due_date: { $lt: new Date() } })
         .toArray();
       for (const transaction of overdue) {
-        const copy = await database
+        const copy = await booksDb()
           .collection("copies")
           .findOne({ _id: id(transaction.copy_id) });
         const book =
           copy &&
-          (await database.collection("books").findOne({ _id: copy.book_id }));
+          (await booksDb().collection("books").findOne({ _id: copy.book_id }));
         const days = Math.ceil(
           (Date.now() - new Date(transaction.due_date).getTime()) / 86400000,
         );

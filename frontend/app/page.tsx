@@ -4,21 +4,16 @@ import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { BookCard } from "@/components/book-card";
 import { api } from "@/lib/api";
-import { sampleBooks } from "@/lib/sample-data";
 import type { Book, Student } from "@/lib/types";
 export default function Dashboard() {
-  const [books, setBooks] = useState<Book[]>(sampleBooks),
+  const [books, setBooks] = useState<Book[]>([]),
     [name, setName] = useState("Reader"),
     [notice, setNotice] = useState("");
   useEffect(() => {
     api
       .books()
       .then(setBooks)
-      .catch(() =>
-        setNotice(
-          "Showing saved sample data while the library server is unavailable.",
-        ),
-      );
+      .catch(() => setNotice("Unable to load your borrowed books right now."));
     api
       .profile()
       .then((p) => setName(p.name))
@@ -76,23 +71,7 @@ export default function Dashboard() {
               key={book.id}
               book={book}
               action={
-                <button
-                  className="small"
-                  onClick={async () => {
-                    try {
-                      await api.extend(book.id);
-                      setNotice("Due date extension requested.");
-                    } catch (e) {
-                      setNotice(
-                        e instanceof Error
-                          ? e.message
-                          : "Could not extend this book.",
-                      );
-                    }
-                  }}
-                >
-                  Extend
-                </button>
+                <span className="muted">Contact librarian for extensions</span>
               }
             />
           ))}

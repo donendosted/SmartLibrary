@@ -4,11 +4,13 @@ import { config } from "./config.js";
 if (!config.mongodbUri) throw new Error("MONGODB_URI must be set");
 const client = new MongoClient(config.mongodbUri);
 let database;
+let booksDatabase;
 
 export async function connectDatabase() {
   if (!database) {
     await client.connect();
-    database = client.db();
+    database = client.db(config.studentsDatabase);
+    booksDatabase = client.db(config.booksDatabase);
     await Promise.all([
       database
         .collection("users")
@@ -17,10 +19,10 @@ export async function connectDatabase() {
         .collection("users")
         .createIndex({ username: 1 }, { unique: true, sparse: true }),
       database.collection("users").createIndex({ email: 1 }, { unique: true }),
-      database
+      booksDatabase
         .collection("books")
         .createIndex({ isbn: 1 }, { unique: true, sparse: true }),
-      database
+      booksDatabase
         .collection("copies")
         .createIndex({ barcode: 1 }, { unique: true }),
       database
@@ -40,6 +42,10 @@ export const db = () => {
   if (!database) throw new Error("Database has not connected yet");
   return database;
 };
+export const booksDb = () => {
+  if (!booksDatabase) throw new Error("Database has not connected yet");
+  return booksDatabase;
+};
 export const id = (value) => new ObjectId(String(value));
 export const isId = (value) => ObjectId.isValid(String(value));
 export const serialize = (document) =>
@@ -48,4 +54,5 @@ export const serializeMany = (documents) => documents.map(serialize);
 export async function closeDatabase() {
   await client.close();
   database = undefined;
+  booksDatabase = undefined;
 }

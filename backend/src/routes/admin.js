@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { parse } from "csv-parse/sync";
-import { db, id, isId, serialize, serializeMany } from "../db.js";
+import { db, booksDb, id, isId, serialize, serializeMany } from "../db.js";
 import { authenticate, requireLibrarian } from "../middleware/auth.js";
 import { apiError, pagination, paged } from "../utils.js";
 const router = Router(),
@@ -11,7 +11,7 @@ const router = Router(),
   });
 router.use(authenticate, requireLibrarian);
 const inventoryItem = async (book) => {
-  const copies = await db()
+  const copies = await booksDb()
     .collection("copies")
     .find({ book_id: book._id.toString() })
     .toArray();
@@ -34,14 +34,14 @@ router.get("/inventory", async (req, res) => {
       }
     : {};
   const [books, total] = await Promise.all([
-    db()
+    booksDb()
       .collection("books")
       .find(filter)
       .sort({ title: 1 })
       .skip(offset)
       .limit(limit)
       .toArray(),
-    db().collection("books").countDocuments(filter),
+    booksDb().collection("books").countDocuments(filter),
   ]);
   res.json(
     paged(await Promise.all(books.map(inventoryItem)), total, page, limit),
@@ -53,7 +53,7 @@ router.get("/users", async (req, res) => {
   const [users, total] = await Promise.all([
     db()
       .collection("users")
-      .find(filter, { projection: { password_hash: 0 } })
+      .find(filter, { projection: { password_hash: 0, "library_card.content": 0 } })
       .sort({ name: 1 })
       .skip(offset)
       .limit(limit)
@@ -92,7 +92,7 @@ router.get("/users/:id", async (req, res) => {
     .collection("users")
     .findOne(
       { _id: id(req.params.id), role: "student" },
-      { projection: { password_hash: 0 } },
+      { projection: { password_hash: 0, "library_card.content": 0 } },
     );
   if (!user) throw apiError(404, "Student not found", "STUDENT_NOT_FOUND");
   const transactions = await database
@@ -102,12 +102,12 @@ router.get("/users/:id", async (req, res) => {
     .toArray();
   const history = await Promise.all(
     transactions.map(async (transaction) => {
-      const copy = await database
+      const copy = await booksDb()
         .collection("copies")
         .findOne({ _id: id(transaction.copy_id) });
       const book =
         copy &&
-        (await database.collection("books").findOne({ _id: copy.book_id }));
+        (await booksDb().collection("books").findOne({ _id: copy.book_id }));
       const fines = await database
         .collection("fines")
         .find({ transaction_id: transaction._id.toString() })
@@ -139,11 +139,11 @@ router.get("/transactions", async (req, res) => {
     transactions.map(async (transaction) => {
       const [user, copy] = await Promise.all([
         database.collection("users").findOne({ _id: id(transaction.user_id) }),
-        database.collection("copies").findOne({ _id: id(transaction.copy_id) }),
+        booksDb().collection("copies").findOne({ _id: id(transaction.copy_id) }),
       ]);
       const book =
         copy &&
-        (await database.collection("books").findOne({ _id: copy.book_id }));
+        (await booksDb().collection("books").findOne({ _id: copy.book_id }));
       return {
         ...serialize(transaction),
         student_id: user?.student_id,
@@ -165,11 +165,11 @@ router.get("/reports/overdue", async (_req, res) => {
     transactions.map(async (transaction) => {
       const [user, copy] = await Promise.all([
         database.collection("users").findOne({ _id: id(transaction.user_id) }),
-        database.collection("copies").findOne({ _id: id(transaction.copy_id) }),
+        booksDb().collection("copies").findOne({ _id: id(transaction.copy_id) }),
       ]);
       const book =
         copy &&
-        (await database.collection("books").findOne({ _id: copy.book_id }));
+        (await booksDb().collection("books").findOne({ _id: copy.book_id }));
       return {
         ...serialize(transaction),
         student_id: user?.student_id,
@@ -197,7 +197,7 @@ router.post("/book", async (req, res) => {
     created_at: new Date(),
   };
   try {
-    book._id = (await db().collection("books").insertOne(book)).insertedId;
+    book._id = (await booksDb().collection("books").insertOne(book)).insertedId;
   } catch (error) {
     if (error.code === 11000)
       throw apiError(409, "ISBN already exists", "DUPLICATE_BOOK");
@@ -212,7 +212,7 @@ router.post("/book", async (req, res) => {
       created_at: new Date(),
     }),
   );
-  await db().collection("copies").insertMany(copies);
+  await booksDb().collection("copies").insertMany(copies);
   res.status(201).json(serialize(book));
 });
 router.put("/book/:id", async (req, res) => {
@@ -231,7 +231,7 @@ router.put("/book/:id", async (req, res) => {
         ].includes(key) && value !== undefined,
     ),
   );
-  const book = await db()
+  const book = await booksDb()
     .collection("books")
     .findOneAndUpdate(
       { _id: id(req.params.id) },
@@ -250,7 +250,7 @@ router.post("/book/import", upload.single("file"), async (req, res) => {
   });
   let imported = 0;
   for (const record of records) {
-    const result = await db()
+    const result = await booksDb()
       .collection("books")
       .findOneAndUpdate(
         { isbn: record.ISBN },
@@ -274,7 +274,7 @@ router.post("/book/import", upload.single("file"), async (req, res) => {
         created_at: new Date(),
       }),
     );
-    await db().collection("copies").insertMany(copies);
+    await booksDb().collection("copies").insertMany(copies);
     imported++;
   }
   res.status(201).json({ imported });

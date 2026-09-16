@@ -95,6 +95,9 @@ nav a.active {
   margin: 0 auto;
   padding: 40px 5vw 72px;
 }
+.bottom-nav {
+  display: none;
+}
 h1 {
   font-size: 2rem;
   line-height: 1.15;
@@ -218,7 +221,10 @@ p {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--soft);
+  background: var(--soft) url("/bg.jpg") center / cover fixed no-repeat;
+}
+.login {
+  background: var(--soft) url("/bg.jpg") center / cover fixed no-repeat !important;
 }
 .auth-card {
   width: min(100%, 440px);
@@ -257,6 +263,24 @@ input {
   border-radius: 6px;
   font: inherit;
   color: var(--ink);
+}
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 12px;
+  border: 1px solid #9ca3af;
+  border-radius: 6px;
+  font: inherit;
+  resize: vertical;
+}
+.button-link {
+  display: inline-block;
+  border: 1px solid var(--blue);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--blue);
+  font-weight: 600;
 }
 input:focus {
   outline: 2px solid var(--blue);
@@ -373,6 +397,33 @@ dd {
   }
   h1 {
     font-size: 1.7rem;
+  }
+  .shell > nav:not(.bottom-nav) {
+    display: none;
+  }
+  .page {
+    padding-bottom: 92px;
+  }
+  .bottom-nav {
+    position: fixed;
+    z-index: 10;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid var(--line);
+  }
+  .bottom-nav a {
+    padding: 8px 6px;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+  .bottom-nav a.active {
+    color: var(--blue);
+    font-weight: 700;
   }
 }
 :root {

@@ -1,5 +1,5 @@
 import { config } from "../config.js";
-import { db, serialize } from "../db.js";
+import { db, booksDb, serialize } from "../db.js";
 import { apiError } from "../utils.js";
 
 const now = () => new Date();
@@ -19,7 +19,7 @@ export async function checkout({ barcode, student_id }) {
   if (!student) throw apiError(404, "Student not found", "STUDENT_NOT_FOUND");
   if (student.status !== "active")
     throw apiError(403, "Student account is suspended", "ACCOUNT_SUSPENDED");
-  const copy = await database
+  const copy = await booksDb()
     .collection("copies")
     .findOneAndUpdate(
       { barcode, status: "available" },
@@ -27,7 +27,7 @@ export async function checkout({ barcode, student_id }) {
       { returnDocument: "before" },
     );
   if (!copy) {
-    const exists = await database.collection("copies").findOne({ barcode });
+    const exists = await booksDb().collection("copies").findOne({ barcode });
     throw apiError(
       exists ? 409 : 404,
       exists ? "Book copy is not available" : "Book barcode not found",
@@ -48,7 +48,7 @@ export async function checkout({ barcode, student_id }) {
     transaction._id = (
       await database.collection("transactions").insertOne(transaction)
     ).insertedId;
-    const book = await database
+    const book = await booksDb()
       .collection("books")
       .findOne({ _id: copy.book_id });
     await notify(
@@ -58,7 +58,7 @@ export async function checkout({ barcode, student_id }) {
     );
     return serialize(transaction);
   } catch (error) {
-    await database
+    await booksDb()
       .collection("copies")
       .updateOne(
         { _id: copy._id, status: "borrowed" },
@@ -70,7 +70,7 @@ export async function checkout({ barcode, student_id }) {
 
 export async function returnCopy({ barcode }) {
   const database = db();
-  const copy = await database.collection("copies").findOne({ barcode });
+  const copy = await booksDb().collection("copies").findOne({ barcode });
   if (!copy) throw apiError(404, "Book barcode not found", "COPY_NOT_FOUND");
   const transaction = await database
     .collection("transactions")
@@ -81,7 +81,7 @@ export async function returnCopy({ barcode }) {
     );
   if (!transaction)
     throw apiError(409, "Copy is not checked out", "NOT_CHECKED_OUT");
-  await database
+  await booksDb()
     .collection("copies")
     .updateOne(
       { _id: copy._id },
@@ -107,7 +107,7 @@ export async function returnCopy({ barcode }) {
     { sort: { created_at: 1 }, returnDocument: "before" },
   );
   if (hold) {
-    const book = await database
+    const book = await booksDb()
       .collection("books")
       .findOne({ _id: copy.book_id });
     await notify(

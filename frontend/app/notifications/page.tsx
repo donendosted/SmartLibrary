@@ -3,18 +3,15 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { api } from "@/lib/api";
-import { sampleNotifications } from "@/lib/sample-data";
 import type { Notification } from "@/lib/types";
 export default function Notifications() {
-  const [items, setItems] = useState<Notification[]>(sampleNotifications),
+  const [items, setItems] = useState<Notification[]>([]),
     [message, setMessage] = useState("");
   useEffect(() => {
     api
       .notifications()
       .then(setItems)
-      .catch(() =>
-        setMessage("Showing saved alerts while the server is unavailable."),
-      );
+      .catch(() => setMessage("Unable to load notifications right now."));
   }, []);
   return (
     <Guard>

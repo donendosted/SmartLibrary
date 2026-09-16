@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { Guard } from "@/components/guard";
 import { api } from "@/lib/api";
 import type { Student } from "@/lib/types";
+import Link from "next/link";
 export default function Account() {
   const [student, setStudent] = useState<Student>(),
     [message, setMessage] = useState("");
@@ -38,6 +39,15 @@ export default function Account() {
           ) : (
             <p>Loading profile…</p>
           )}
+        </section>
+        <section className="account-card">
+          <h2>Need help?</h2>
+          <p>
+            Contact the librarian about due dates, renewals, or account issues.
+          </p>
+          <Link className="button-link" href="/contact">
+            Contact librarian
+          </Link>
         </section>
         <section className="account-card">
           <h2>Transaction history</h2>
