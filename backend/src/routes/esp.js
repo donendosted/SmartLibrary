@@ -80,6 +80,21 @@ router.get("/scans", authenticate, requireLibrarian, async (req, res) => {
   res.json({ data: scans.map(serialize), total: await db().collection("esp_scans").countDocuments() });
 });
 
+router.get("/status/:deviceId", authenticate, requireLibrarian, async (req, res) => {
+  const deviceId = String(req.params.deviceId);
+  const collection = db().collection("esp_scans");
+  const [total_scans, last] = await Promise.all([
+    collection.countDocuments({ device_id: deviceId }),
+    collection.findOne({ device_id: deviceId }, { sort: { created_at: -1 } }),
+  ]);
+  res.json({
+    device_id: deviceId,
+    total_scans,
+    last_scan: last?.created_at || null,
+    status: last && Date.now() - new Date(last.created_at).getTime() < 5 * 60_000 ? "active" : "offline",
+  });
+});
+
 // Device polling endpoint. It returns one pending request and marks it active.
 router.get("/", deviceAuth, async (_req, res) => {
   const collection = db().collection("esp_capture_requests");
