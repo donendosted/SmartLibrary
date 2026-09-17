@@ -34,6 +34,11 @@ app.use("/api/admin", admin);
 app.use("/api/scan", scan);
 app.use("/api/notifications", notifications);
 app.use("/esp", esp);
+// Public health probe used by provisioning tools and legacy firmware.
+app.get("/backend/esp", async (_req, res) => {
+  await db().command({ ping: 1 });
+  res.json({ status: "ok", service: "Smart Library Backend", endpoint: "/backend/esp" });
+});
 // Backwards-compatible prefix used by earlier ESP32 firmware builds.
 app.use("/backend/esp", esp);
 // Librarian-facing capture control API (device polling remains at /esp).
