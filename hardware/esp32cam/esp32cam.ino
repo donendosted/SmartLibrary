@@ -8,13 +8,14 @@
 // CONFIG
 // ============================================================
 
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "Jab we net";
+const char* WIFI_PASSWORD = "ohlovely";
 
 // IMPORTANT: NO trailing slash
-const char* API_BASE_URL = "https://your-backend.onrender.com";
+const char* API_BASE_URL = "https://smartlibrary-umx9.onrender.com";
 
-const char* ESP_DEVICE_TOKEN = "YOUR_64_CHAR_ESP_DEVICE_TOKEN";
+const char* ESP_DEVICE_TOKEN =
+    "2fe1395cbbb73867d0e7984fbb11b81cef47da6df3181c30b86e42024c391523";
 
 constexpr uint8_t TRIGGER_BUTTON_PIN = 13;
 constexpr uint8_t STATUS_LED_PIN = 4;
