@@ -22,7 +22,7 @@ app.use(
 );
 app.use(express.json({ limit: "8mb" }));
 app.use(morgan("combined"));
-app.get("/health", async (_req, res) => {
+app.get("/", async (_req, res) => {
   await db().command({ ping: 1 });
   res.json({ status: "ok" });
 });
