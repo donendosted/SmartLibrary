@@ -13,13 +13,21 @@ import notifications from "./routes/notifications.js";
 import esp from "./routes/esp.js";
 import { notFound, errorHandler } from "./middleware/errors.js";
 const app = express();
-app.use(
-  cors({
-    origin: (origin, cb) =>
-      !origin || config.corsOrigins.includes(origin)
-        ? cb(null, true)
-        : cb(new Error("Origin not allowed"), false),
-  }),
+const restrictedCors = cors({
+  origin: (origin, cb) =>
+    !origin || config.corsOrigins.includes(origin)
+      ? cb(null, true)
+      : cb(new Error("Origin not allowed"), false),
+});
+const espCors = cors({ origin: true });
+// ESP devices do not send browser origins and may be provisioned on changing
+// networks. Bypass origin validation only for ESP paths; all other APIs retain
+// the explicit frontend allowlist above.
+app.use((req, res, next) =>
+  req.path === "/esp" || req.path.startsWith("/esp/") ||
+  req.path === "/backend/esp" || req.path.startsWith("/backend/esp/")
+    ? espCors(req, res, next)
+    : restrictedCors(req, res, next),
 );
 app.use(express.json({ limit: "8mb" }));
 app.use(morgan("combined"));
