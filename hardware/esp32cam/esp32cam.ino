@@ -3,10 +3,10 @@
 #include <ArduinoJson.h>
 #include "esp_camera.h"
 
-const char* WIFI_SSID = "YOUR_WIFI";
-const char* WIFI_PASSWORD = "YOUR_PASSWORD";
-const char* API_BASE_URL = "https://your-backend.onrender.com";
-const char* ESP_DEVICE_TOKEN = "replace-with-ESP_DEVICE_TOKEN";
+const char* WIFI_SSID = "Jab we net";
+const char* WIFI_PASSWORD = "ohlovely";
+const char* API_BASE_URL = "https://smartlibrary-umx9.onrender.com";
+const char* ESP_DEVICE_TOKEN = "2fe1395cbbb73867d0e7984fbb11b81cef47da6df3181c30b86e42024c391523";
 
 // AI-Thinker ESP32-CAM pin map.
 #define PWDN_GPIO_NUM 32
