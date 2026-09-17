@@ -2,9 +2,6 @@
 
 IoT-enabled library automation system with ESP32-CAM barcode scanning, Next.js PWAs, and Express backend.
 
-**Status:** MVP Complete ✓  
-**Built at:** Bankura Unnayani Institute of Engineering (BUIE)
-
 ---
 
 ## Quick Links
@@ -34,6 +31,10 @@ IoT-enabled library automation system with ESP32-CAM barcode scanning, Next.js P
 - 90% student engagement increase
 
 ---
+
+## Public link
+
+[frontend-azure-one-36.vercel.app](https://frontend-azure-one-36.vercel.app)
 
 ## Features
 
@@ -402,36 +403,11 @@ Standards: Airbnb style, add tests, update docs, no console errors
 
 ---
 
-## License
-
-MIT License - See LICENSE file
-
----
-
-## Support
-
-**Issues:** Open GitHub issue with error message, steps to reproduce, environment
-
-**Questions:** support@smartlibrary.local
-
----
-
 ## Team
 
-**Built by:** BUIE B.Tech Students
-- Hardware: Embedded Systems Team
-- Backend: Full-Stack Developer
-- Frontend: UI/UX Developer
-- Advisor: Engineering Faculty
+**Built by:** 
+- Debasmit Bose
+- Aditi Bandyopadhyay
+- Rupesh Raj
 
 ---
-
-## Acknowledgments
-
-- OpenLibrary API, Unsplash, BUIE Library, Node.js/React communities
-
----
-
-**Version:** 1.0.0 (MVP)  
-**Updated:** January 2024  
-**Get Started:** See Setup section above ↑
