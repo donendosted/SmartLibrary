@@ -69,4 +69,4 @@ The complete contract and request examples are in [docs/API_CONTRACT.md](docs/AP
 
 ## Deployment
 
-On Render, create a Node web service rooted at `backend` and use build command `npm install` and start command `npm start`. Supply `MONGODB_URI` from MongoDB Atlas or another reachable MongoDB provider, plus `JWT_SECRET` and `CORS_ORIGINS` (the two Vercel URLs, comma-separated). Render's managed PostgreSQL service is no longer required.
+On Render, create a Node web service rooted at `backend` and use build command `npm install` and start command `npm start`. Supply `MONGODB_URI` from MongoDB Atlas or another reachable MongoDB provider, plus `JWT_SECRET` and `CORS_ORIGINS`. Set `CORS_ORIGINS` to the exact deployed frontend origin, without a trailing slash, for example `https://frontend-ihona10sx-dos-projects-44341e20.vercel.app`. Render's managed PostgreSQL service is no longer required.

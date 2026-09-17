@@ -1,4 +1,4 @@
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
 export type ApiError = Error & { status?: number };
 export function getToken() {
   return typeof window === "undefined"

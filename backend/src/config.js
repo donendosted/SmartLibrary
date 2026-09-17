@@ -11,7 +11,8 @@ export const config = {
     process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:3001"
   )
     .split(",")
-    .map((value) => value.trim()),
+    .map((value) => value.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
   loanDurationDays: Number(process.env.LOAN_DURATION_DAYS || 14),
   dailyFineRate: Number(process.env.DAILY_FINE_RATE || 5),
   librarianEmail: process.env.LIBRARIAN_EMAIL || "librarian@buie.ac.in",

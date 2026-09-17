@@ -1,5 +1,5 @@
 import type { Book, Hold, Notification, Student } from "./types";
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
 export const getToken = () =>
   typeof window === "undefined" ? null : localStorage.getItem("library_token");
 export const tokenPayload = () => {
