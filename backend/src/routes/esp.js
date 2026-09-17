@@ -71,6 +71,21 @@ router.post("/trigger", deviceAuth, async (req, res) => {
   res.status(201).json({ request: serialize(request) });
 });
 
+// Device acknowledgement: active=false means the ESP has consumed the poll
+// response (the request remains capturing until its snapshot is uploaded).
+router.post("/ack", deviceAuth, async (req, res) => {
+  const requestId = req.body?.request_id || req.query.request_id;
+  if (!isId(requestId))
+    throw apiError(400, "Valid request_id is required", "INVALID_REQUEST_ID");
+  const result = await db().collection("esp_capture_requests").findOneAndUpdate(
+    { _id: id(requestId), status: "capturing" },
+    { $set: { device_acknowledged: req.body?.active === false, updated_at: new Date() } },
+    { returnDocument: "after" },
+  );
+  if (!result) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
+  res.json({ requestId, active: false, acknowledged: true });
+});
+
 // Librarian creates a capture request; the ESP polls and fulfils it.
 router.post("/request", authenticate, requireLibrarian, async (req, res) => {
   const request = {

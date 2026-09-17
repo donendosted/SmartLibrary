@@ -10,8 +10,11 @@ Render environment and configure the same secret on every trusted device.
    librarian JWT. The optional JSON body is `{ "action": "checkout",
    "student_id": "001/26" }` (action may also be `return` or `capture`).
 2. The camera polls `GET /esp` or `GET /backend/esp` with
-   `X-ESP-Device-Token`. A pending request is returned once and marked
-   `capturing`.
+   `X-ESP-Device-Token` every five seconds. A pending request is returned once
+   and marked `capturing`.
+2a. After blinking, the camera acknowledges with `POST /esp/ack` and
+   `{ "request_id": "...", "active": false }`; the request stays capturing
+   until the image upload completes.
 3. Upload a multipart `image` and `request_id` to `/esp/snapshot`, or send raw
    JPEG bytes to `/backend/esp/snapshot?request_id=<id>`. The token header is
    required for both formats.
