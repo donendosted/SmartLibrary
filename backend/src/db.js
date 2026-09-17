@@ -37,6 +37,8 @@ export async function connectDatabase() {
       database
         .collection("esp_capture_requests")
         .createIndex({ status: 1, created_at: 1 }),
+      database.collection("esp_scans").createIndex({ created_at: -1 }),
+      database.collection("esp_scans").createIndex({ device_id: 1 }),
     ]);
   }
   return database;
