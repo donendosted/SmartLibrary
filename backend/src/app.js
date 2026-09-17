@@ -34,5 +34,8 @@ app.use("/api/admin", admin);
 app.use("/api/scan", scan);
 app.use("/api/notifications", notifications);
 app.use("/esp", esp);
+// Librarian-facing capture control API (device polling remains at /esp).
+app.use("/api/admin/esp", esp);
+app.use("/api/admin/esp", esp);
 app.use(notFound, errorHandler);
 export default app;

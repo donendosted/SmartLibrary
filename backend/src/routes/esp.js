@@ -34,7 +34,8 @@ router.post("/request", authenticate, requireLibrarian, async (req, res) => {
   };
   const result = await db().collection("esp_capture_requests").insertOne(request);
   request._id = result.insertedId;
-  res.status(201).json({ request: serialize(request) });
+  const serialized = serialize(request);
+  res.status(201).json({ ...serialized, request: serialized });
 });
 
 // Device polling endpoint. It returns one pending request and marks it active.
@@ -45,11 +46,11 @@ router.get("/", deviceAuth, async (_req, res) => {
     { $set: { status: "capturing", updated_at: new Date() } },
     { sort: { created_at: 1 }, returnDocument: "after" },
   );
-  res.json({ request: request ? serialize(request) : null, capture: Boolean(request) });
+  res.json({ request: request ? serialize(request) : null, capture: Boolean(request), active: Boolean(request), requestId: request?._id?.toString() });
 });
 
 // Device uploads a JPEG/PNG snapshot for a request.
-router.post("/snapshot", deviceAuth, upload.single("image"), async (req, res) => {
+router.post(["/snapshot", "/"], deviceAuth, upload.single("image"), async (req, res) => {
   const requestId = req.body.request_id || req.query.request_id;
   if (!isId(requestId)) throw apiError(400, "Valid request_id is required", "INVALID_REQUEST_ID");
   if (!req.file) throw apiError(400, "image file is required", "IMAGE_REQUIRED");
@@ -69,6 +70,20 @@ router.post("/snapshot", deviceAuth, upload.single("image"), async (req, res) =>
 });
 
 // Librarian/frontend retrieves the completed image.
+router.get("/:requestId", authenticate, requireLibrarian, async (req, res) => {
+  if (!isId(req.params.requestId)) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
+  const request = await db().collection("esp_capture_requests").findOne({ _id: id(req.params.requestId) });
+  if (!request) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
+  res.json({
+    id: request._id.toString(),
+    status: request.status === "completed" ? "ready" : request.status,
+    image: request.snapshot
+      ? `data:${request.snapshot.content_type};base64,${request.snapshot.content}`
+      : undefined,
+    image_url: request.snapshot ? `/esp/${request._id}/snapshot` : undefined,
+  });
+});
+
 router.get("/:requestId/snapshot", authenticate, requireLibrarian, async (req, res) => {
   if (!isId(req.params.requestId)) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
   const request = await db().collection("esp_capture_requests").findOne({ _id: id(req.params.requestId) });
@@ -80,7 +95,9 @@ router.get("/request/:requestId", authenticate, requireLibrarian, async (req, re
   if (!isId(req.params.requestId)) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
   const request = await db().collection("esp_capture_requests").findOne({ _id: id(req.params.requestId) });
   if (!request) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
-  res.json({ request: serialize(request) });
+  const serialized = serialize(request);
+  if (request.snapshot) serialized.image = `data:${request.snapshot.content_type};base64,${request.snapshot.content}`;
+  res.json({ request: serialized, ...serialized });
 });
 
 export default router;
