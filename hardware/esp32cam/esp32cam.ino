@@ -3,10 +3,17 @@
 #include <ArduinoJson.h>
 #include "esp_camera.h"
 
-const char* WIFI_SSID = "Jab we net";
-const char* WIFI_PASSWORD = "ohlovely";
-const char* API_BASE_URL = "https://smartlibrary-umx9.onrender.com";
-const char* ESP_DEVICE_TOKEN = "2fe1395cbbb73867d0e7984fbb11b81cef47da6df3181c30b86e42024c391523";
+// Fill these values before flashing. Never commit real credentials.
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// Use the backend origin only (no trailing slash). The API is also exposed at /esp.
+const char* API_BASE_URL = "https://your-backend.onrender.com";
+const char* ESP_DEVICE_TOKEN = "YOUR_64_CHAR_ESP_DEVICE_TOKEN";
+
+constexpr uint8_t TRIGGER_BUTTON_PIN = 13; // button to GND, internal pull-up
+constexpr uint8_t STATUS_LED_PIN = 4;      // AI Thinker onboard flash LED
+constexpr unsigned long POLL_INTERVAL_MS = 3000;
+constexpr unsigned long HEALTH_INTERVAL_MS = 60000;
 
 // AI-Thinker ESP32-CAM pin map.
 #define PWDN_GPIO_NUM 32
@@ -35,33 +42,118 @@ void setupCamera() {
   c.pin_sscb_sda = SIOD_GPIO_NUM; c.pin_sscb_scl = SIOC_GPIO_NUM; c.pin_pwdn = PWDN_GPIO_NUM; c.pin_reset = RESET_GPIO_NUM;
   c.xclk_freq_hz = 20000000; c.pixel_format = PIXFORMAT_JPEG;
   c.frame_size = FRAMESIZE_VGA; c.jpeg_quality = 10; c.fb_count = 1;
-  if (esp_camera_init(&c) != ESP_OK) ESP.restart();
+  if (esp_camera_init(&c) != ESP_OK) {
+    Serial.println("Camera initialization failed; restarting");
+    delay(2000);
+    ESP.restart();
+  }
+}
+
+void blink(uint8_t times) {
+  for (uint8_t i = 0; i < times; i++) {
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    delay(200);
+    digitalWrite(STATUS_LED_PIN, LOW);
+    delay(200);
+  }
+}
+
+bool backendHealthy() {
+  HTTPClient client;
+  client.setTimeout(5000);
+  if (!client.begin(String(API_BASE_URL) + "/esp")) return false;
+  client.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
+  const int status = client.GET();
+  client.end();
+  return status == HTTP_CODE_OK;
+}
+
+bool uploadCapture(const String& requestId) {
+  camera_fb_t* fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Camera capture failed");
+    return false;
+  }
+
+  HTTPClient upload;
+  upload.setTimeout(15000);
+  const String url = String(API_BASE_URL) + "/esp/snapshot";
+  if (!upload.begin(url)) {
+    esp_camera_fb_return(fb);
+    return false;
+  }
+  const String boundary = "----SmartLibraryESP32Boundary";
+  upload.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
+  upload.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
+  const String head = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"request_id\"\r\n\r\n" + requestId +
+                      "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"image\"; filename=\"library-card.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+  const String tail = "\r\n--" + boundary + "--\r\n";
+  const size_t total = head.length() + fb->len + tail.length();
+  uint8_t* body = static_cast<uint8_t*>(malloc(total));
+  if (!body) {
+    esp_camera_fb_return(fb);
+    upload.end();
+    return false;
+  }
+  memcpy(body, head.c_str(), head.length());
+  memcpy(body + head.length(), fb->buf, fb->len);
+  memcpy(body + head.length() + fb->len, tail.c_str(), tail.length());
+  const int status = upload.POST(body, total);
+  Serial.printf("Snapshot upload HTTP status: %d\n", status);
+  free(body);
+  upload.end();
+  esp_camera_fb_return(fb);
+  return status >= 200 && status < 300;
+}
+
+void pollForCapture() {
+  HTTPClient poll;
+  poll.setTimeout(5000);
+  if (!poll.begin(String(API_BASE_URL) + "/esp")) return;
+  poll.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
+  const int status = poll.GET();
+  if (status == HTTP_CODE_OK) {
+    DynamicJsonDocument doc(1536);
+    if (!deserializeJson(doc, poll.getString()) && doc["capture"] == true) {
+      const String requestId = doc["requestId"].as<String>();
+      Serial.printf("SCAN TRIGGERED (request %s)\n", requestId.c_str());
+      blink(3);
+      Serial.println(uploadCapture(requestId) ? "Capture uploaded" : "Capture upload failed");
+    }
+  } else if (status > 0) {
+    Serial.printf("ESP poll HTTP status: %d\n", status);
+  }
+  poll.end();
 }
 
 void setup() {
-  Serial.begin(115200); WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) delay(500);
+  Serial.begin(115200);
+  pinMode(TRIGGER_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_LED_PIN, LOW);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print('.'); }
+  Serial.printf("\nWi-Fi connected: %s\n", WiFi.localIP().toString().c_str());
   setupCamera();
+  Serial.println("Camera initialized successfully");
 }
 
 void loop() {
+  static unsigned long lastPoll = 0, lastHealth = 0;
+  static bool buttonWasDown = false;
   if (WiFi.status() != WL_CONNECTED) { WiFi.reconnect(); delay(2000); return; }
-  HTTPClient poll; poll.begin(String(API_BASE_URL) + "/esp");
-  poll.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
-  int status = poll.GET(); String body = poll.getString(); poll.end();
-  if (status == 200) {
-    DynamicJsonDocument doc(1024); if (!deserializeJson(doc, body) && doc["capture"] == true) {
-      String requestId = doc["request"]["id"].as<String>(); camera_fb_t* fb = esp_camera_fb_get();
-      if (fb) {
-        HTTPClient upload; upload.begin(String(API_BASE_URL) + "/esp/snapshot");
-        upload.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
-        String boundary = "----ESP32Boundary"; upload.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
-        String head = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"request_id\"\r\n\r\n" + requestId + "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"image\"; filename=\"library-card.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
-        String tail = "\r\n--" + boundary + "--\r\n"; uint8_t* data = (uint8_t*)malloc(head.length() + fb->len + tail.length());
-        memcpy(data, head.c_str(), head.length()); memcpy(data + head.length(), fb->buf, fb->len); memcpy(data + head.length() + fb->len, tail.c_str(), tail.length());
-        upload.POST(data, head.length() + fb->len + tail.length()); free(data); upload.end(); esp_camera_fb_return(fb);
-      }
-    }
+  const bool buttonDown = digitalRead(TRIGGER_BUTTON_PIN) == LOW;
+  if (buttonDown && !buttonWasDown) { // optional local trigger: claim any queued request immediately
+    blink(3);
+    lastPoll = 0;
   }
-  delay(3000);
+  buttonWasDown = buttonDown;
+  const unsigned long now = millis();
+  if (now - lastHealth >= HEALTH_INTERVAL_MS || lastHealth == 0) {
+    Serial.println(backendHealthy() ? "Backend is healthy" : "Backend health check failed");
+    lastHealth = now;
+  }
+  if (now - lastPoll >= POLL_INTERVAL_MS || lastPoll == 0) { pollForCapture(); lastPoll = now; }
+  delay(25);
 }
