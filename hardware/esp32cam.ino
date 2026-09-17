@@ -77,12 +77,12 @@ bool setupCamera() {
 bool uploadImage(camera_fb_t *frame, const String &requestId) {
   WiFiClient client;
   HTTPClient http;
-  String url = String(BACKEND_BASE_URL) + "/esp";
+  String url = String(BACKEND_BASE_URL) + "/esp/snapshot";
   if (!http.begin(client, url)) return false;
-  http.addHeader("X-Device-Token", DEVICE_TOKEN);
+  http.addHeader("X-ESP-Device-Token", DEVICE_TOKEN);
 
   String boundary = "----SmartLibraryBoundary";
-  String head = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"requestId\"\r\n\r\n" + requestId + "\r\n";
+  String head = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"request_id\"\r\n\r\n" + requestId + "\r\n";
   head += "--" + boundary + "\r\nContent-Disposition: form-data; name=\"image\"; filename=\"library-card.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
   String tail = "\r\n--" + boundary + "--\r\n";
   http.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
@@ -107,13 +107,16 @@ void pollBackend() {
   HTTPClient http;
   WiFiClient client;
   if (!http.begin(client, String(BACKEND_BASE_URL) + "/esp")) return;
-  http.addHeader("X-Device-Token", DEVICE_TOKEN);
+  http.addHeader("X-ESP-Device-Token", DEVICE_TOKEN);
   int status = http.GET();
   if (status != 200) { http.end(); return; }
   DynamicJsonDocument doc(512);
   if (deserializeJson(doc, http.getString())) { http.end(); return; }
-  bool active = doc["active"] | false;
-  String requestId = doc["requestId"] | "";
+  bool active = doc["capture"] | false;
+  String requestId = "";
+  if (doc["request"].is<JsonObject>()) {
+    requestId = doc["request"]["id"] | "";
+  }
   http.end();
   if (!active) return;
 
@@ -141,4 +144,3 @@ void loop() {
   }
   delay(10);
 }
-

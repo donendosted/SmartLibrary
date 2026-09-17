@@ -34,24 +34,24 @@ Every `POLL_INTERVAL_MS` the camera sends:
 
 ```http
 GET /esp
-X-Device-Token: <DEVICE_TOKEN>
+X-ESP-Device-Token: <DEVICE_TOKEN>
 ```
 
 The response is JSON. A capture is requested with:
 
 ```json
-{"active":true,"requestId":"optional-id"}
+{"capture":true,"request":{"id":"capture-request-id"}}
 ```
 
 When active, the camera enables its LED, captures a JPEG, and sends:
 
 ```http
-POST /esp
-X-Device-Token: <DEVICE_TOKEN>
+POST /esp/snapshot
+X-ESP-Device-Token: <DEVICE_TOKEN>
 Content-Type: multipart/form-data; boundary=...
 ```
 
-The multipart field is named `image`; `requestId` is included as a text field.
+The multipart field is named `image`; `request_id` is included as a text field.
 The backend should return `2xx` and mark the request fulfilled. Any failure is
 retried on the next poll; the camera never stores credentials or images in
 flash.
