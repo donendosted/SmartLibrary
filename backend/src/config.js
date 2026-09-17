@@ -17,4 +17,5 @@ export const config = {
   dailyFineRate: Number(process.env.DAILY_FINE_RATE || 5),
   librarianEmail: process.env.LIBRARIAN_EMAIL || "librarian@buie.ac.in",
   smtpUrl: process.env.SMTP_URL,
+  espDeviceToken: process.env.ESP_DEVICE_TOKEN,
 };

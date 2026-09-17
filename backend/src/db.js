@@ -34,6 +34,9 @@ export async function connectDatabase() {
       database
         .collection("notifications")
         .createIndex({ user_id: 1, created_at: -1 }),
+      database
+        .collection("esp_capture_requests")
+        .createIndex({ status: 1, created_at: 1 }),
     ]);
   }
   return database;

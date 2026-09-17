@@ -10,6 +10,7 @@ import books from "./routes/books.js";
 import admin from "./routes/admin.js";
 import scan from "./routes/scan.js";
 import notifications from "./routes/notifications.js";
+import esp from "./routes/esp.js";
 import { notFound, errorHandler } from "./middleware/errors.js";
 const app = express();
 app.use(
@@ -32,5 +33,6 @@ app.use("/api/books", books);
 app.use("/api/admin", admin);
 app.use("/api/scan", scan);
 app.use("/api/notifications", notifications);
+app.use("/esp", esp);
 app.use(notFound, errorHandler);
 export default app;

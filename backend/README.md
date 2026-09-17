@@ -59,6 +59,10 @@ Prerequisites: Node.js 20+ and either a local MongoDB 7+ server or a MongoDB Atl
 
 Run the unit tests with `npm test`.
 
+## ESP32-CAM capture flow
+
+Set `ESP_DEVICE_TOKEN` in the backend and configure the same value on the camera. A librarian creates a capture request with `POST /api/admin/esp/request` using a librarian JWT. The camera polls `GET /esp` with `X-ESP-Device-Token`; when a request is returned, it captures the library card and uploads a JPEG/PNG to `POST /esp/snapshot` as multipart field `image` with `request_id`. The librarian can poll `GET /esp/request/:requestId` and display the image from `GET /esp/:requestId/snapshot` using their JWT.
+
 ## Data model
 
 Books and copies are isolated in `MONGODB_BOOKS_DB`; students, loans, holds, fines, notifications, and contact requests are isolated in `MONGODB_STUDENTS_DB`. API records expose MongoDB `_id` values as string `id` fields. Copy reservation during checkout uses a conditional atomic update so a copy cannot be issued twice. Registration accepts any email string and an optional library-card upload; students contact the librarian for extensions rather than extending online.
