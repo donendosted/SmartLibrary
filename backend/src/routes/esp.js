@@ -76,7 +76,12 @@ router.get("/:requestId", authenticate, requireLibrarian, async (req, res) => {
   if (!request) throw apiError(404, "Capture request not found", "REQUEST_NOT_FOUND");
   res.json({
     id: request._id.toString(),
-    status: request.status === "completed" ? "ready" : request.status,
+    status:
+      request.status === "completed"
+        ? "ready"
+        : request.status === "capturing"
+          ? "processing"
+          : request.status,
     image: request.snapshot
       ? `data:${request.snapshot.content_type};base64,${request.snapshot.content}`
       : undefined,
