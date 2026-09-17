@@ -20,6 +20,10 @@ Render environment and configure the same secret on every trusted device.
    normal library transaction collections. Every attempt is recorded in the
    `esp_scans` collection.
 
+The physical button can queue a capture directly with `POST /esp/trigger`
+using the same device token. `GET /backend/esp` is a public MongoDB-backed
+health probe; capture polling remains token-protected.
+
 Barcode decoding uses Python Pillow + Pyzbar/libzbar when installed. If the
 decoder is unavailable or no barcode is visible, the image is still retained
 and the response reports `barcode: null`.

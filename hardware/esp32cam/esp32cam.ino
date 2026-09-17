@@ -68,6 +68,17 @@ bool backendHealthy() {
   return status == HTTP_CODE_OK;
 }
 
+bool queueButtonCapture() {
+  HTTPClient client;
+  client.setTimeout(5000);
+  if (!client.begin(String(API_BASE_URL) + "/esp/trigger")) return false;
+  client.addHeader("X-ESP-Device-Token", ESP_DEVICE_TOKEN);
+  client.addHeader("Content-Type", "application/json");
+  const int status = client.POST("{}");
+  client.end();
+  return status >= 200 && status < 300;
+}
+
 bool uploadCapture(const String& requestId) {
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb) {
@@ -144,7 +155,8 @@ void loop() {
   static bool buttonWasDown = false;
   if (WiFi.status() != WL_CONNECTED) { WiFi.reconnect(); delay(2000); return; }
   const bool buttonDown = digitalRead(TRIGGER_BUTTON_PIN) == LOW;
-  if (buttonDown && !buttonWasDown) { // optional local trigger: claim any queued request immediately
+  if (buttonDown && !buttonWasDown) {
+    Serial.println(queueButtonCapture() ? "SCAN REQUEST QUEUED" : "SCAN REQUEST FAILED");
     blink(3);
     lastPoll = 0;
   }

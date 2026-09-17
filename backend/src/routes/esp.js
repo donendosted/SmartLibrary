@@ -54,6 +54,23 @@ const deviceAuth = (req, _res, next) => {
   next();
 };
 
+// Optional physical-button trigger. The device token is the only credential
+// required; the resulting request is still processed through the normal queue.
+router.post("/trigger", deviceAuth, async (req, res) => {
+  const request = {
+    status: "pending",
+    action: ["checkout", "return"].includes(req.body?.action) ? req.body.action : "capture",
+    student_id: req.body?.student_id || null,
+    device_id: req.headers["x-esp-device-id"] || "ESP32-CAM",
+    requested_by: "device",
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
+  const result = await db().collection("esp_capture_requests").insertOne(request);
+  request._id = result.insertedId;
+  res.status(201).json({ request: serialize(request) });
+});
+
 // Librarian creates a capture request; the ESP polls and fulfils it.
 router.post("/request", authenticate, requireLibrarian, async (req, res) => {
   const request = {
